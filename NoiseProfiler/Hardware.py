@@ -4,7 +4,7 @@
 
 import Hamlib
 from csv import DictWriter
-import time, decimal
+import os, time, decimal
 
 class Radio():
     # setup radio - encapsulate hamlib functionality
@@ -35,16 +35,21 @@ class Instrument():
         # setup radio
         self.radio = Radio(config["radio"]["model"], config["radio"]["device"], config["radio"]["rate"])
         # setup output
-        self.outFile = open(config["output"]["filename"], config["output"]["filemode"])
+        fileMode = config["output"]["filemode"]
+        fileName = config["output"]["filename"]
+        if not os.path.exists(fileName):
+            fileMode = 'w'
+        self.outFile = open(fileName, fileMode)
         self.outCSV = DictWriter(self.outFile,
                                   fieldnames=self.config["output"]["columns"])
-
+        if fileMode == 'w': # new file, needs  header
+            self.outCSV.writeheader()
 
     def takeMeasurementSet(self):
         """
         loop through all bands, all frequencies
         """
-        self.sweepID = time.ctime()
+        self.sweepID = time.time()
         print("taking measurement set...")
         for band in self.config["bands"]:
             self.sweepBandMeasurement(band)
@@ -58,12 +63,12 @@ class Instrument():
         # TODO: turn off attenuator
         self.radio.setMode(Hamlib.RIG_MODE_CW)
         # sweep freqs
-        for freq in self.generateFrequencySet(bandDict):
+        for freq in self.generateFrequencies(bandDict):
             sigLevel = self.takeMeasurementAtFrequency(freq)
             self.recordMeasurement(sigLevel, bandDict["name"], freq)
             print("measurement at %f: %f" % (freq, sigLevel))
 
-    def generateFrequencySet(self, band):
+    def generateFrequencies(self, band):
         """
         merge defautls into band dict and compute steps
         """
@@ -93,17 +98,15 @@ class Instrument():
         # take a bunch of measurements
         # TODO remove use of default averaging samples here for band value.
         measurements = []
-        for i in range(self.config["defaults"]["averaging_samples"]):
+        for i in range(self.config["method"]["averaging_samples"]):
             time.sleep(0.1)
             measurements.append(self.radio.getSignalLevel())
-        # compute average
-        # return sum(measurements) / len(measurements)
-        return min(measurements)
+        return _sumMethods[self.config["method"]["summarize"]](measurements)
 
     def recordMeasurement(self, sigLevel, band, freq):
         measureDict = {
             "sweep": self.sweepID,
-            "timestamp": time.ctime(),
+            "timestamp": time.time(),
             "band_name": band,
             "frequency": freq,
             "signal_level": sigLevel
@@ -112,4 +115,9 @@ class Instrument():
 
     def __del__(self):
         self.outFile.close()
+
+
+_sumMethods = {
+  "min": min, "max": max, "aver": lambda x: sum(x)/len(x)
+}
 
