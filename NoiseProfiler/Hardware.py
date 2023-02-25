@@ -79,6 +79,13 @@ class Instrument():
         """
         take one measurement and return signal
         """
+        # TODO: implement several measurement methods:
+        #   point-averaging : several measuremments at this point
+        #   point-min: several measurements and take average
+        #   sweep-average: spaced measurements across a small range
+        #   sweep-min: take minimum over a sweep
+        #   random-average: random over a small range and average
+        #   random-min: random over a small range take minimum
         self.radio.setFreq(f)
         # take a bunch of measurements
         # TODO remove use of default averaging samples here for band value.
