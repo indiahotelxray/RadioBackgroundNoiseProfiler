@@ -9,9 +9,11 @@ import time, decimal
 class Radio():
     # setup radio - encapsulate hamlib functionality
     def __init__(self, modelID, device, rate):
+        Hamlib.rig_set_debug(Hamlib.RIG_DEBUG_NONE)
         self.rig = Hamlib.Rig(modelID)
         self.rig.set_conf("rig_pathname", device)
         self.rig.set_conf("retry", "5")
+        self.rig.state.rigport.parm.serial.rate = rate
         self.rig.open()
 
     def setFreq(self, f, attOff=True):
@@ -80,7 +82,10 @@ class Instrument():
         self.radio.setFreq(f)
         # take a bunch of measurements
         # TODO remove use of default averaging samples here for band value.
-        measurements = [self.radio.getSignalLevel() for i in range(self.config["defaults"]["averaging_samples"])]
+        measurements = []
+        for i in range(self.config["defaults"]["averaging_samples"]):
+            time.sleep(0.1)
+            measurements.append(self.radio.getSignalLevel())
         # compute average
         return sum(measurements) / len(measurements)
 
