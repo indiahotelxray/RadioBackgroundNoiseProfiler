@@ -54,6 +54,9 @@ class Instrument():
         loop through frequences on a given band
         """
         print("sweeping band %s" % bandDict["name"])
+        # set mode to CW for consistency
+        # TODO: turn off attenuator
+        self.radio.setMode(Hamlib.RIG_MODE_CW)
         # sweep freqs
         for freq in self.generateFrequencySet(bandDict):
             sigLevel = self.takeMeasurementAtFrequency(freq)
@@ -94,7 +97,8 @@ class Instrument():
             time.sleep(0.1)
             measurements.append(self.radio.getSignalLevel())
         # compute average
-        return sum(measurements) / len(measurements)
+        # return sum(measurements) / len(measurements)
+        return min(measurements)
 
     def recordMeasurement(self, sigLevel, band, freq):
         measureDict = {
