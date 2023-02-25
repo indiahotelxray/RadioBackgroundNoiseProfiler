@@ -96,7 +96,7 @@ class Instrument():
         #   random-min: random over a small range take minimum
         self.radio.setFreq(f)
         # take a bunch of measurements
-        # TODO remove use of default averaging samples here for band value.
+        # TODO: move measurement loop to band
         measurements = []
         for i in range(self.config["method"]["averaging_samples"]):
             time.sleep(0.1)
